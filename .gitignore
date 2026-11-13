@@ -1,0 +1,21 @@
+# Credentials and local configuration
+.env
+.env.*
+!.env.example
+
+# Build and local tooling output
+node_modules/
+.next/
+out/
+build/
+coverage/
+*.tsbuildinfo
+.wrangler/
+
+# Local-only prototype copies / starter archive
+/index.html
+/gmi-cloud-ops-pilot-starter.zip
+
+# OS/editor files
+.DS_Store
+Thumbs.db
