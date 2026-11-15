@@ -77,7 +77,11 @@ function parseCsv(text: string) {
 
 function summarize(samples: MetricSample[]): MetricSummary[] {
   const grouped = new Map<string, MetricSample[]>();
-  for (const sample of samples) grouped.set(sample.metric, [...(grouped.get(sample.metric) ?? []), sample]);
+  for (const sample of samples) {
+    const group = grouped.get(sample.metric);
+    if (group) group.push(sample);
+    else grouped.set(sample.metric, [sample]);
+  }
   return [...grouped.entries()].map(([key, values]) => {
     const definition = METRICS[key];
     const ordered = [...values].sort((a, b) => Date.parse(a.timestamp) - Date.parse(b.timestamp));
@@ -137,7 +141,7 @@ export function PostIngestionAnalysis() {
         const timestamp = row[indexes.timestamp]?.trim() ?? "";
         const metric = row[indexes.metric]?.trim().toLowerCase() ?? "";
         const value = Number(row[indexes.value]?.trim());
-        if (!METRICS[metric]) { unsupported += 1; continue; }
+        if (!Object.prototype.hasOwnProperty.call(METRICS, metric)) { unsupported += 1; continue; }
         const hasTimezone = /(?:Z|[+-]\d{2}:?\d{2})$/i.test(timestamp);
         if (!timestamp || !hasTimezone || !Number.isFinite(Date.parse(timestamp)) || row[indexes.value]?.trim() === "" || !Number.isFinite(value)) { skipped += 1; continue; }
         accepted.push({ timestamp: new Date(timestamp).toISOString(), metric, value });
