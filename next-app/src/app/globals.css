@@ -299,3 +299,117 @@ a { color: inherit; text-decoration: none; }
   .page-footer > span:last-child { flex-wrap: wrap; font-size: 6px; }
   .toast { right: 12px; bottom: 71px; left: 12px; max-width: none; }
 }
+
+
+/* Data onboarding and analysis flow */
+.pathway-strip { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; margin-top: 10px; }
+.pathway-card { display: flex; align-items: center; gap: 10px; min-height: 62px; padding: 10px 12px; transition: border-color .16s, transform .16s; }
+.pathway-card:hover { border-color: #42685c; transform: translateY(-1px); }
+.pathway-step { display: grid; place-items: center; flex: none; width: 27px; height: 27px; border: 1px solid #2c5148; border-radius: 8px; color: #83dfbe; background: #142a27; font-size: 8px; font-weight: 700; }
+.pathway-copy { display: grid; flex: 1; gap: 5px; min-width: 0; }
+.pathway-copy b { display: flex; align-items: center; gap: 6px; color: #d9e6e8; font-size: 9px; font-weight: 650; }
+.pathway-copy b svg { color: #79d4b3; }
+.pathway-copy small { color: #7c8e9a; font-size: 7px; }
+.pathway-card > svg { color: #728a91; }
+.workflow-panel { margin-top: 12px; padding: 17px; scroll-margin-top: 18px; }
+.workflow-heading { align-items: center; margin-bottom: 14px; }
+.workflow-heading .panel-heading p { font-size: 8px; }
+.pending-tag { padding: 4px 7px; border: 1px solid #3a4750; border-radius: 12px; color: #a3b0b5; background: #17212a; font-size: 7px; font-weight: 650; white-space: nowrap; }
+.source-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; }
+.source-card { padding: 12px; border: 1px solid #22313c; border-radius: 9px; background: #0d1721; }
+.source-card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.source-icon, .note-icon, .insight-mark { display: grid; place-items: center; flex: none; width: 27px; height: 27px; border: 1px solid #2c3c48; border-radius: 7px; background: #14212c; }
+.source-icon.mint { color: #7ce2c0; }
+.source-icon.blue { color: #85b2ff; }
+.source-icon.amber { color: #e5bd79; }
+.source-card > b { display: block; color: #dce6e9; font-size: 9px; font-weight: 650; }
+.source-card p { min-height: 37px; margin: 6px 0 9px; color: #8595a1; font-size: 8px; line-height: 1.6; }
+.source-card > small { color: #718390; font-size: 7px; }
+.architecture-flow { display: flex; align-items: center; justify-content: center; gap: 13px; margin: 12px 0 15px; padding: 10px; border: 1px dashed #2a3a44; border-radius: 8px; color: #a9bcc2; background: #0c151e; font-size: 8px; }
+.architecture-flow svg { flex: none; color: #64c7a4; }
+.readiness-bottom { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(220px, .8fr); gap: 12px; }
+.readiness-checklist { padding: 12px; border: 1px solid #22313c; border-radius: 9px; background: #0d1721; }
+.checklist-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-bottom: 9px; border-bottom: 1px solid #22303b; }
+.checklist-heading b { color: #dbe5e8; font-size: 9px; }
+.checklist-heading span { color: #84d9b8; font-size: 7px; }
+.checklist-item { display: flex; align-items: flex-start; gap: 8px; padding: 8px 1px 0; color: #9aaab3; font-size: 8px; line-height: 1.5; cursor: pointer; }
+.checklist-item input { flex: none; width: 13px; height: 13px; margin: 0; accent-color: #55c69d; }
+.readiness-note, .consultation-callout { display: flex; flex-direction: column; align-items: flex-start; padding: 13px; border: 1px solid #2b3c45; border-radius: 9px; background: linear-gradient(145deg, #13221f, #111b24); }
+.note-icon { margin-bottom: 10px; color: #8dd9bf; background: #17302b; border-color: #2d5349; }
+.readiness-note > b, .consultation-callout > b { color: #dce8e7; font-size: 9px; }
+.readiness-note p, .consultation-callout p { margin: 6px 0 9px; color: #91a2a6; font-size: 8px; line-height: 1.65; }
+.readiness-note > small { color: #7d9291; font-size: 7px; line-height: 1.5; }
+.workflow-actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 10px; color: #718491; font-size: 7px; }
+.workflow-actions button { height: 28px; font-size: 8px; }
+.consultation-layout { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(230px, .85fr); gap: 12px; }
+.consultation-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 0; padding: 0; list-style: none; counter-reset: consult; }
+.consultation-list li { position: relative; display: grid; align-content: start; gap: 6px; min-height: 84px; padding: 12px 11px 10px 37px; border: 1px solid #22313c; border-radius: 8px; background: #0d1721; counter-increment: consult; }
+.consultation-list li::before { content: "0" counter(consult); position: absolute; top: 12px; left: 11px; color: #76c9a8; font-size: 8px; font-weight: 700; }
+.consultation-list b { color: #d5e0e3; font-size: 8px; }
+.consultation-list span { color: #8797a1; font-size: 7px; line-height: 1.6; }
+.consultation-callout { background: linear-gradient(145deg, #14222b, #111b24); }
+.consultation-callout .note-icon { color: #93baff; border-color: #304761; background: #17283a; }
+.consultation-callout button { margin-top: auto; min-height: 31px; font-size: 8px; }
+.security-reminder { display: flex; align-items: center; gap: 7px; margin-top: 11px; padding: 8px 10px; border: 1px solid #3c3327; border-radius: 7px; color: #c4a66d; background: #211c16; font-size: 7px; line-height: 1.5; }
+.security-reminder svg { flex: none; }
+.analysis-warning { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 12px; padding: 9px 10px; border: 1px solid #34465a; border-radius: 8px; color: #a8b8c7; background: #111d2a; font-size: 8px; line-height: 1.55; }
+.analysis-warning svg { flex: none; margin-top: 1px; color: #90b8ed; }
+.analysis-warning b { color: #d2e1f1; }
+.analysis-tabs { display: flex; gap: 6px; border-bottom: 1px solid #23323e; }
+.analysis-tabs button { display: inline-flex; align-items: center; gap: 7px; padding: 9px 11px; border: 1px solid transparent; border-bottom: 0; border-radius: 7px 7px 0 0; color: #81939e; background: transparent; font-size: 8px; }
+.analysis-tabs button.selected { border-color: #2b433e; color: #a8e1cb; background: #14231f; }
+.analysis-content { padding-top: 12px; }
+.analysis-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; }
+.analysis-metrics article { display: grid; gap: 6px; padding: 12px; border: 1px solid #22313c; border-radius: 8px; background: #0d1721; }
+.analysis-metrics article > span { color: #8798a3; font-size: 8px; }
+.analysis-metrics article > b { color: #e6f0f1; font-size: 18px; font-weight: 680; letter-spacing: -.02em; }
+.analysis-metrics article > b small { color: #95a6af; font-size: 8px; font-weight: 450; }
+.analysis-metrics article > small { color: #718390; font-size: 7px; }
+.analysis-insight { display: flex; gap: 10px; margin-top: 10px; padding: 11px; border: 1px solid #293c38; border-radius: 8px; background: #111e1b; }
+.insight-mark { color: #81dfb9; background: #18332b; border-color: #2d5648; }
+.insight-mark.blue { color: #9abaff; background: #1b293a; border-color: #314967; }
+.analysis-insight div { display: grid; gap: 5px; }
+.analysis-insight b { color: #d5e4df; font-size: 8px; }
+.analysis-insight p { margin: 0; color: #94a69f; font-size: 7px; line-height: 1.65; }
+.analysis-mini-chart { display: grid; gap: 8px; max-width: 580px; margin-top: 12px; }
+.analysis-bar-row { display: grid; grid-template-columns: 55px minmax(0, 1fr) 38px; align-items: center; gap: 9px; color: #8798a3; font-size: 7px; }
+.analysis-bar-row > div { height: 6px; overflow: hidden; border-radius: 6px; background: #23313b; }
+.analysis-bar-row i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #399a7d, #63e0b6); }
+.analysis-bar-row b { color: #bad6cb; font-size: 7px; text-align: right; }
+.analysis-data-row { display: grid; grid-template-columns: 90px 1fr; gap: 8px 12px; margin-top: 12px; padding: 11px; border: 1px solid #22313c; border-radius: 8px; background: #0d1721; font-size: 7px; }
+.analysis-data-row span { color: #748895; }
+.analysis-data-row b { color: #afbec5; font-weight: 550; }
+.analysis-footer { display: flex; justify-content: space-between; gap: 10px; margin-top: 12px; padding-top: 9px; border-top: 1px solid #22303b; color: #768994; font-size: 7px; }
+.analysis-footer span { display: flex; align-items: center; gap: 6px; }
+.analysis-footer .status-dot { width: 5px; height: 5px; }
+
+@media (max-width: 900px) {
+  .readiness-bottom, .consultation-layout { grid-template-columns: 1fr; }
+  .readiness-note, .consultation-callout { min-height: 0; }
+}
+@media (max-width: 620px) {
+  .nav-item { width: 39px; }
+  .nav-item .nav-tag { display: none; }
+  .pathway-strip { grid-template-columns: 1fr; gap: 6px; margin-top: 8px; }
+  .pathway-card { min-height: 53px; padding: 8px 10px; }
+  .workflow-panel { margin-top: 9px; padding: 12px 10px; }
+  .workflow-heading { align-items: flex-start; }
+  .workflow-heading .demo-tag, .workflow-heading .pending-tag { margin-top: 3px; }
+  .source-grid { grid-template-columns: 1fr; gap: 7px; }
+  .source-card p { min-height: 0; }
+  .architecture-flow { justify-content: flex-start; flex-wrap: wrap; gap: 7px; font-size: 7px; }
+  .architecture-flow svg { width: 11px; }
+  .readiness-bottom { gap: 8px; }
+  .workflow-actions { align-items: flex-start; }
+  .workflow-actions span { max-width: 65%; line-height: 1.5; }
+  .consultation-list { grid-template-columns: 1fr; }
+  .consultation-list li { min-height: 0; }
+  .analysis-tabs button { flex: 1; justify-content: center; padding: 8px 5px; font-size: 7px; }
+  .analysis-metrics { gap: 6px; }
+  .analysis-metrics article { gap: 5px; padding: 9px 7px; }
+  .analysis-metrics article > span { min-height: 22px; font-size: 6px; line-height: 1.4; }
+  .analysis-metrics article > b { font-size: 13px; }
+  .analysis-metrics article > b small { font-size: 6px; }
+  .analysis-metrics article > small { font-size: 6px; }
+  .analysis-footer { flex-direction: column; }
+}
