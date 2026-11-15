@@ -22,7 +22,15 @@ npm run typecheck
 npm run build
 ```
 
-靜態輸出位於 `next-app/out/`。GitHub Pages 工作流程會在發布前排除 `/api/` 輸出；Dashboard 直接匯入 `src/lib/mock-data.ts` 中明確標示的合成 fixture。
+靜態輸出位於 `next-app/out/`。GitHub Pages 工作流程會在發布前排除 `/api/` 輸出；Dashboard 預設直接匯入 `src/lib/mock-data.ts` 中明確標示的合成 fixture。
+
+## 三項導入工作流程
+
+- **資料接線準備：**六項盤點勾選只存在使用者目前瀏覽器的 localStorage，可下載只包含勾選狀態的 JSON 摘要；共用裝置可清除勾選。
+- **導入前諮詢：**通用提綱可複製或下載成文字檔。此靜態網站沒有諮詢收件或後端保存功能。
+- **導入後分析：**可在瀏覽器本機讀取最多 5 MB、50,000 列的 canonical metrics CSV，或下載內建合成範例；支援指標名稱列於分析區格式說明。必填欄位為 `timestamp,metric,value`，時間需含時區。CSV 不會上傳或保存，離開／重新整理即清除分析結果；平均／最小／最大是匯入列的描述統計，不等同自動叢集聚合、告警、根因診斷或 SLO 判定。
+
+以上不代表已有 Prometheus／客戶資料接線。正式接線仍須先確認 pilot API、伺服器端驗證與 RBAC、指標映射和核定 SLO；不可將資料源憑證放入靜態前端。
 
 ## 專案內容
 

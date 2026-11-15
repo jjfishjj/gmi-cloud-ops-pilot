@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Activity,
   AlertTriangle,
@@ -8,7 +8,6 @@ import {
   ArrowRight,
   BarChart3,
   Bell,
-  Check,
   ChevronDown,
   CircleHelp,
   Clock3,
@@ -16,6 +15,7 @@ import {
   Copy,
   Cpu,
   Database,
+  Download,
   Gauge,
   LayoutDashboard,
   LockKeyhole,
@@ -28,9 +28,36 @@ import {
 } from "lucide-react";
 import { dashboardFixture as data } from "@/lib/mock-data";
 import { Button } from "@/components/ui/button";
+import { PostIngestionAnalysis } from "@/components/post-ingestion-analysis";
 
 const windows = ["6 小時", "24 小時", "7 天"] as const;
 type WindowLabel = (typeof windows)[number];
+const readinessItems = [
+  "試點範圍限一個客戶、一個叢集、一個 vLLM deployment",
+  "已知 metrics backend、資料保留期與採集 cadence",
+  "已盤點 DCGM Exporter 與 GPU / node 對應方式",
+  "已取得不含請求本文的 vLLM /metrics 範例與版本",
+  "已確認告警來源、owner、runbook 與核定 SLO（如有）",
+  "已確認 SSO/RBAC、唯讀授權、私網路徑與資料政策",
+];
+const consultationTemplate = [
+  "GMI Cloud pilot 資料接線／導入前盤點（請勿附憑證、token、prompt 或真實請求本文）",
+  "1. Pilot 範圍：單一客戶、一個 GPU 叢集、一個 vLLM deployment；GPU 型號／數量與 region。",
+  "2. 指標儲存層：Prometheus 相容後端、版本、查詢 API 所在網路、保存期限與採集 cadence。",
+  "3. GPU：是否有 DCGM Exporter；collector 欄位、GPU/node 對應與 exporter 版本。",
+  "4. vLLM：實際版本與不含請求內容的 /metrics 範例；replica labels 與錯誤率權威來源。",
+  "5. 告警與目標：既有告警平台／owner、runbook、核定的 SLO 與門檻；未核定者標記未設定。",
+  "6. 安全：SSO/RBAC、唯讀權限、私有網路路徑、資料所在地與稽核政策。",
+].join("\n");
+
+function downloadText(filename: string, content: string, type: string) {
+  const url = URL.createObjectURL(new Blob([content], { type }));
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(url);
+}
 
 function display(value: number | null, unit: string, digits = 0) {
   return value === null ? "未提供" : `${value.toFixed(digits)}${unit ? ` ${unit}` : ""}`;
@@ -39,8 +66,8 @@ function display(value: number | null, unit: string, digits = 0) {
 export function Dashboard() {
   const [windowLabel, setWindowLabel] = useState<WindowLabel>("24 小時");
   const [alertFilter, setAlertFilter] = useState<"全部" | "需檢視" | "資訊">("全部");
-  const [analysisView, setAnalysisView] = useState<"gpu" | "inference">("gpu");
   const [readinessChecks, setReadinessChecks] = useState<boolean[]>([false, false, false, false, false, false]);
+  const [readinessLoaded, setReadinessLoaded] = useState(false);
   const [notice, setNotice] = useState("");
   const alerts = useMemo(() => data.alerts.filter((alert) => {
     if (alertFilter === "需檢視") return alert.severity === "warning";
@@ -48,27 +75,55 @@ export function Dashboard() {
     return true;
   }), [alertFilter]);
 
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("gmi-cloud-ops-readiness-v1");
+      if (saved) {
+        const parsed: unknown = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length === readinessItems.length && parsed.every((item) => typeof item === "boolean")) {
+          setReadinessChecks(parsed);
+        }
+      }
+    } catch {
+      // Local browser storage may be disabled; the checklist still works in memory.
+    } finally {
+      setReadinessLoaded(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!readinessLoaded) return;
+    try {
+      localStorage.setItem("gmi-cloud-ops-readiness-v1", JSON.stringify(readinessChecks));
+    } catch {
+      // Keep the in-memory checklist usable when local storage is unavailable.
+    }
+  }, [readinessChecks, readinessLoaded]);
+
   function showDemoNotice() {
     setNotice("這是唯讀預覽；目前只顯示模擬 fixture，沒有連接或更新任何叢集資料。");
     window.setTimeout(() => setNotice(""), 3500);
   }
 
   async function copyConsultationList() {
-    const text = [
-      "GMI Cloud pilot 資料接線／導入前盤點（請勿附憑證、token、prompt 或真實請求本文）",
-      "1. Pilot 範圍：單一客戶、一個 GPU 叢集、一個 vLLM deployment；GPU 型號／數量與 region。",
-      "2. 指標儲存層：Prometheus 相容後端、版本、查詢 API 所在網路、保存期限與採集 cadence。",
-      "3. GPU：是否有 DCGM Exporter；collector 欄位、GPU/node 對應與 exporter 版本。",
-      "4. vLLM：實際版本與不含請求內容的 /metrics 範例；replica labels 與錯誤率權威來源。",
-      "5. 告警與目標：既有告警平台／owner、runbook、核定的 SLO 與門檻；未核定者標記未設定。",
-      "6. 安全：SSO/RBAC、唯讀權限、私有網路路徑、資料所在地與稽核政策。",
-    ].join("\n");
     try {
-      await navigator.clipboard.writeText(text);
+      await navigator.clipboard.writeText(consultationTemplate);
       setNotice("已複製通用盤點提綱到剪貼簿；本頁沒有傳送或保存任何資料。");
     } catch {
       setNotice("無法存取剪貼簿。可依下方提綱逐項與平台工程師／TAM 盤點；本頁沒有傳送任何資料。");
     }
+    window.setTimeout(() => setNotice(""), 4000);
+  }
+
+  function exportReadinessSummary() {
+    const summary = {
+      title: "GMI Cloud pilot 資料接線準備清單",
+      generatedAt: new Date().toISOString(),
+      note: "本摘要只包含勾選狀態，不含憑證、客戶遙測或使用者輸入。仍需由專案團隊確認真實資料來源與權限。",
+      items: readinessItems.map((label, index) => ({ label, checked: readinessChecks[index] })),
+    };
+    downloadText("gmi-cloud-readiness-summary.json", JSON.stringify(summary, null, 2), "application/json;charset=utf-8");
+    setNotice("已在本機下載盤點摘要；沒有傳送資料。清單勾選狀態只儲存在此瀏覽器。");
     window.setTimeout(() => setNotice(""), 4000);
   }
 
@@ -242,18 +297,11 @@ export function Dashboard() {
           <div className="readiness-bottom">
             <div className="readiness-checklist">
               <div className="checklist-heading"><b>接線前確認</b><span>{readinessChecks.filter(Boolean).length} / 6 已勾選</span></div>
-              {[
-                "試點範圍限一個客戶、一個叢集、一個 vLLM deployment",
-                "已知 metrics backend、資料保留期與採集 cadence",
-                "已盤點 DCGM Exporter 與 GPU / node 對應方式",
-                "已取得不含請求本文的 vLLM /metrics 範例與版本",
-                "已確認告警來源、owner、runbook 與核定 SLO（如有）",
-                "已確認 SSO/RBAC、唯讀授權、私網路徑與資料政策",
-              ].map((item, index) => <label className="checklist-item" key={item}><input type="checkbox" checked={readinessChecks[index]} onChange={() => setReadinessChecks((current) => current.map((checked, itemIndex) => itemIndex === index ? !checked : checked))} /><span>{item}</span></label>)}
+              {readinessItems.map((item, index) => <label className="checklist-item" key={item}><input type="checkbox" checked={readinessChecks[index]} onChange={() => setReadinessChecks((current) => current.map((checked, itemIndex) => itemIndex === index ? !checked : checked))} /><span>{item}</span></label>)}
             </div>
             <aside className="readiness-note"><span className="note-icon"><LockKeyhole size={15} /></span><b>瀏覽器不應直連叢集</b><p>正式設計由伺服器端唯讀 API 代理查詢；憑證留在伺服器端，來源保持私有，不接受任意 PromQL。</p><small>目前沒有接線 API 或安全收件後端。此區僅供盤點，不會傳送或保存。</small></aside>
           </div>
-          <div className="workflow-actions"><span>勾選只保存在目前頁面記憶體；重新整理即清除。</span><Button variant="outline" size="sm" onClick={() => setReadinessChecks([false, false, false, false, false, false])}>清除勾選</Button></div>
+          <div className="workflow-actions"><span>勾選保存在此瀏覽器本機；共用裝置請記得清除。摘要下載僅含勾選狀態。</span><div className="workflow-action-buttons"><Button variant="outline" size="sm" onClick={exportReadinessSummary}><Download size={13} />下載盤點摘要</Button><Button variant="outline" size="sm" onClick={() => setReadinessChecks([false, false, false, false, false, false])}>清除勾選</Button></div></div>
         </section>
 
         <section id="consultation" className="surface panel workflow-panel consultation-panel">
@@ -268,32 +316,12 @@ export function Dashboard() {
               <li><b>安全與權限</b><span>SSO/RBAC、誰能唯讀查看、伺服器到資料源的私網路徑、資料所在地與稽核政策。</span></li>
               <li><b>告警與目標</b><span>告警平台／owner／runbook，以及已核定的 TTFT、ITL、錯誤率或硬體門檻；未核定就標示「未設定」。</span></li>
             </ol>
-            <aside className="consultation-callout"><span className="note-icon"><CircleHelp size={15} /></span><b>目前沒有線上諮詢收件表單</b><p>這個 GitHub Pages 示範站沒有後端收件功能。可先複製通用提綱，和你的 GMI Cloud 聯絡窗口／平台工程師私下確認；不要在公開頁貼上真實客戶資料。</p><Button onClick={copyConsultationList}><Copy size={14} />複製諮詢提綱</Button></aside>
+            <aside className="consultation-callout"><span className="note-icon"><CircleHelp size={15} /></span><b>目前沒有線上諮詢收件表單</b><p>這個 GitHub Pages 示範站沒有後端收件功能。可先複製通用提綱，和你的 GMI Cloud 聯絡窗口／平台工程師私下確認；不要在公開頁貼上真實客戶資料。</p><div className="consultation-actions"><Button onClick={copyConsultationList}><Copy size={14} />複製諮詢提綱</Button><Button variant="outline" onClick={() => downloadText("gmi-cloud-pilot-consultation-outline.txt", consultationTemplate, "text/plain;charset=utf-8")}><Download size={14} />下載提綱</Button></div></aside>
           </div>
           <div className="security-reminder"><LockKeyhole size={14} /><span>請勿輸入或分享密碼、token、私鑰、客戶 prompt、請求本文或其他敏感 payload。</span></div>
         </section>
 
-        <section id="post-ingestion-analysis" className="surface panel workflow-panel analysis-panel">
-          <div className="panel-heading workflow-heading">
-            <div><div className="panel-title-row"><span className="panel-icon mint"><BarChart3 size={16} /></span><h2>導入後分析畫面</h2></div><p>示範接線成功後如何解讀 GPU 與 vLLM 指標</p></div>
-            <span className="demo-tag">合成樣本 · 非真實分析</span>
-          </div>
-          <div className="analysis-warning"><CircleHelp size={15} /><span><b>目前沒有匯入、上傳或保存功能。</b>下方只用既有合成 fixture 示範分析版型；不會讀取本機檔案或連到客戶系統。</span></div>
-          <div className="analysis-tabs" role="tablist" aria-label="選擇示範分析類型">
-            <button role="tab" aria-selected={analysisView === "gpu"} className={analysisView === "gpu" ? "selected" : ""} onClick={() => setAnalysisView("gpu")}><Cpu size={14} />GPU 資源分析</button>
-            <button role="tab" aria-selected={analysisView === "inference"} className={analysisView === "inference" ? "selected" : ""} onClick={() => setAnalysisView("inference")}><Activity size={14} />vLLM 推理分析</button>
-          </div>
-          {analysisView === "gpu" ? <div className="analysis-content" role="tabpanel">
-            <div className="analysis-metrics"><article><span>示範 GPU 平均使用率</span><b>{data.gpuSummary.avgUtilization.value}%</b><small>合成 fixture · 4 張示範卡</small></article><article><span>示範 VRAM 平均使用</span><b>{data.gpuSummary.avgVram.value}%</b><small>百分比不可跨卡相加</small></article><article><span>示範最高溫度</span><b>{data.gpuSummary.maxTemperature.value}°C</b><small>溫度門檻未設定</small></article></div>
-            <div className="analysis-insight"><span className="insight-mark"><Check size={15} /></span><div><b>可觀察的示範結果</b><p>樣本卡的使用率落在 68–79%，最高溫為 66°C。正式報告需附上時間戳、資料新鮮度、聚合方式與客戶確認的溫度政策；目前不能據此宣稱叢集健康或判斷異常根因。</p></div></div>
-            <div className="analysis-mini-chart">{data.gpus.map((gpu) => <div className="analysis-bar-row" key={gpu.id}><span>{gpu.id}</span><div><i style={{ width: `${gpu.utilization.value}%` }} /></div><b>{gpu.utilization.value}%</b></div>)}</div>
-          </div> : <div className="analysis-content" role="tabpanel">
-            <div className="analysis-metrics"><article><span>輸出吞吐量</span><b>{data.deployment.outputTokensPerSecond.value?.toLocaleString()} <small>tokens/s</small></b><small>合成 fixture</small></article><article><span>TTFT P95</span><b>{data.deployment.ttftP95.value} <small>ms</small></b><small>SLO 未設定</small></article><article><span>等待佇列</span><b>{data.deployment.waitingRequests.value}</b><small>合成 fixture</small></article></div>
-            <div className="analysis-insight"><span className="insight-mark blue"><Activity size={15} /></span><div><b>解讀限制</b><p>樣本展示了吞吐、TTFT 與等待佇列；錯誤率來源未提供，客戶 SLO 亦未設定。接線後須先核對 vLLM 版本與 metrics 語義，不把缺值當成 0，也不推定 SLA 違規。</p></div></div>
-            <div className="analysis-data-row"><span>待接資料</span><b>vLLM /metrics · API gateway 錯誤率 · 核定 SLO</b><span>結論</span><b>目前僅能展示讀數格式，未做真實客戶診斷</b></div>
-          </div>}
-          <div className="analysis-footer"><span><i className="status-dot demo-dot" />合成 fixture · 來源時間未提供 · 非營運建議</span><span>正式分析需真實唯讀 API 與經確認的指標映射</span></div>
-        </section>
+      <PostIngestionAnalysis />
 
         <footer className="page-footer"><span>GMI CLOUD · PILOT CLUSTER DASHBOARD</span><span><i className="footer-dot" />資料來源：{data.sourceLabel} <span className="footer-divider">·</span> 新鮮度：{data.freshness}</span></footer>
       </main>
