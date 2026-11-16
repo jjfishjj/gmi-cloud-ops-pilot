@@ -1,0 +1,186 @@
+openapi: 3.1.0
+info:
+  title: GMI Cloud Read-only Prometheus Adapter
+  version: 0.1.0
+  description: >-
+    Single-configured-cluster, read-only Prometheus metrics adapter. Metric mappings
+    are operator-configured and must be verified against the actual exporter/runtime version.
+servers:
+  - url: http://127.0.0.1:8787
+    description: Local-only example; deploy behind a trusted HTTPS authentication and RBAC gateway.
+paths:
+  /healthz:
+    get:
+      operationId: healthz
+      summary: Adapter liveness only
+      description: Does not test or reveal Prometheus connectivity or configuration.
+      responses:
+        '200':
+          description: Adapter process is alive.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      service: { type: string, const: prometheus-readonly-adapter }
+                      status: { type: string, const: ok }
+                    required: [service, status]
+                required: [data]
+        '405':
+          $ref: '#/components/responses/Error'
+  /api/v1/clusters/{clusterId}/metrics:
+    get:
+      operationId: queryCanonicalMetrics
+      summary: Query allowlisted metrics for the one configured cluster
+      description: >-
+        Requires a server-to-server bearer token. The configured gateway must perform
+        user authentication and per-resource authorization, then inject this token;
+        never expose it to a browser. Only fixed server-side PromQL templates are used.
+      security:
+        - adapterBearer: []
+      parameters:
+        - name: clusterId
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^[a-zA-Z0-9_.:-]{1,128}$'
+          description: Must equal PROMETHEUS_CLUSTER_ID configured on the adapter.
+        - name: names
+          in: query
+          required: true
+          description: Comma-separated canonical metric names; 1–8 distinct names per request.
+          schema:
+            type: string
+            example: gpu_utilization_pct,inference_ttft_seconds
+        - name: start
+          in: query
+          required: true
+          description: RFC3339 timestamp with timezone or Unix seconds.
+          schema:
+            type: string
+            example: '2026-11-16T10:00:00Z'
+        - name: end
+          in: query
+          required: true
+          description: Must be after start and not more than 60 seconds in the future.
+          schema:
+            type: string
+            example: '2026-11-16T11:00:00Z'
+        - name: step
+          in: query
+          required: false
+          description: Prometheus range-query resolution. Default is selected by the adapter.
+          schema:
+            type: string
+            pattern: '^\\d+(?:\\.\\d+)?(?:s|m|h)$'
+            example: 1m
+      responses:
+        '200':
+          description: Metric series and freshness information; empty series remain distinct from zero-valued points.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetricsResponse'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/Error'
+        '502':
+          $ref: '#/components/responses/Error'
+        '504':
+          $ref: '#/components/responses/Error'
+components:
+  securitySchemes:
+    adapterBearer:
+      type: http
+      scheme: bearer
+      bearerFormat: opaque
+      description: Server-only adapter token injected by the trusted gateway.
+  schemas:
+    MetricsResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [clusterId, metrics]
+          properties:
+            clusterId: { type: string }
+            metrics:
+              type: array
+              items:
+                type: object
+                required: [name, unit, aggregation, series]
+                properties:
+                  name:
+                    type: string
+                    enum:
+                      - gpu_utilization_pct
+                      - gpu_vram_used_bytes
+                      - gpu_temperature_celsius
+                      - gpu_power_watts
+                      - gpu_ecc_dbe_total
+                      - gpu_ecc_sbe_total
+                      - inference_output_tokens_per_second
+                      - inference_requests_per_second
+                      - inference_ttft_seconds
+                      - inference_itl_seconds
+                      - inference_tpot_seconds
+                      - inference_running_requests
+                      - inference_waiting_requests
+                      - inference_kv_cache_used_pct
+                  unit: { type: string }
+                  aggregation: { type: string }
+                  series:
+                    type: array
+                    items:
+                      type: object
+                      required: [labels, points]
+                      properties:
+                        labels:
+                          type: object
+                          additionalProperties: { type: string }
+                        points:
+                          type: array
+                          items:
+                            type: object
+                            required: [timestamp, value]
+                            properties:
+                              timestamp: { type: string, format: date-time }
+                              value: { type: number }
+        meta:
+          type: object
+          required: [asOf, latestSampleAt, freshnessSeconds, stale, hasData, scrapeIntervalSeconds]
+          properties:
+            asOf: { type: string, format: date-time }
+            latestSampleAt: { type: [string, 'null'], format: date-time }
+            freshnessSeconds: { type: [integer, 'null'], minimum: 0 }
+            stale: { type: [boolean, 'null'] }
+            hasData: { type: boolean }
+            scrapeIntervalSeconds: { type: integer, minimum: 1 }
+    ApiError:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message, requestId]
+          properties:
+            code: { type: string }
+            message: { type: string }
+            requestId: { type: string, format: uuid }
+  responses:
+    Error:
+      description: Stable error envelope.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'

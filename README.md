@@ -32,6 +32,18 @@ npm run build
 
 以上不代表已有 Prometheus／客戶資料接線。正式接線仍須先確認 pilot API、伺服器端驗證與 RBAC、指標映射和核定 SLO；不可將資料源憑證放入靜態前端。
 
+## 唯讀 Prometheus adapter
+
+`prometheus-adapter/` 新增獨立 Node.js 伺服器端唯讀 API，提供固定 metric allowlist 與 `/api/v1/query_range` 範圍查詢；含設定範例、OpenAPI 合約和自動測試。它目前沒有接到任何 pilot，也不代表使用者登入／RBAC 已完成；部署前須先核對真實 metric mapping，並置於會驗證企業身份及逐資源授權的受信任 gateway 後。adapter token 與 Prometheus 憑證不可放進瀏覽器或公開環境變數。
+
+執行測試：
+
+```bash
+node --test prometheus-adapter/server.test.mjs
+```
+
+詳細設定、支援指標、限制與部署注意事項見 [`prometheus-adapter/README.md`](./prometheus-adapter/README.md) 及 [`prometheus-adapter/openapi.yaml`](./prometheus-adapter/openapi.yaml)。GitHub Pages 仍只發布使用合成 fixture 的靜態示範，不能執行此 adapter。
+
 ## 專案內容
 
 - `next-app/`：Next.js App Router、TypeScript 與 Dashboard 原始碼。
